@@ -23,14 +23,15 @@ int main(){
 
     int sock_fd, new_socket;
     struct sockaddr_in address;
-    // void* buff = malloc(1024);
     int data_size, val_read;
     int num_pk[2];
     int addrlen = sizeof(address);
+    int node_count = 0;
 
     address.sin_family = AF_INET;
     address.sin_port = htons(PORT);
-    address.sin_addr.s_addr = INADDR_ANY;
+    inet_pton(AF_INET, "172.26.199.112", &address.sin_addr);
+    // address.sin_addr.s_addr = INADDR_ANY;
 
     if((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) <= 0){
         perror("Socket Connection Failed\n");
@@ -41,7 +42,7 @@ int main(){
         perror("Bind Failed");
         exit(EXIT_FAILURE);
     } 
-
+    printf("Waiting for connection....\n");
     if((listen(sock_fd,5))<0){
         perror("Failed to listen");
         exit(EXIT_FAILURE);
@@ -51,43 +52,43 @@ int main(){
         perror("Can't accept a connection.");
         exit(EXIT_FAILURE);
     }
-
+    printf("Connected to %s\n", inet_ntoa(address.sin_addr));
     int fd = open("file_store", O_CREAT | O_WRONLY);
 
     struct node* head = NULL;
-    while((val_read = recv(new_socket, num_pk, sizeof(num_pk), 0))>0){
+    while(1){
+
+        int status = recv(new_socket, num_pk, sizeof(num_pk), 0);
+
+        if(status <= 0 ){
+            printf("Connection Closed. Waiting for a new one...\n");
+            new_socket = accept(sock_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+            printf("Connected to %s\n", inet_ntoa(address.sin_addr));
+            continue;
+        }
+
         struct input *id = malloc(sizeof(struct input));
-        void* buff = malloc(num_pk[0]); // the problem was in the declaration of buff outside the loop and since we declare the buff ptr outside the loop and since it is only a ref to the actual data and since we are actually resetting the buff at the end of every loop, the nodes which contains the refs to buff are also resetted leading to the data attribute of struct node, pointing to nothing as node->data points to buff and if buff has nothing so does node->data T_T.
+
+        void* buff = malloc(num_pk[0]); 
+
         printf("%s : Data size: %d\n",inet_ntoa(address.sin_addr), num_pk[0]);
-        recv(new_socket, buff, num_pk[0], 0);
-        write(fd, &num_pk[1], 4);
-        // printf("%ld\n", strlen(buff)); // print
         
-        // // id->data = (char*)buff; // check
-        // // id->key = num_pk[1];
-        // // id->size = num_pk[0];
+        recv(new_socket, buff, num_pk[0], 0);
 
-        // // printf("%s", (char *) id->data); //print
-
+        write(fd, &num_pk[1], 4);
         write(fd, buff, num_pk[0]);
 
         head = insert(head,createNode(buff, num_pk[1], num_pk[0]));
-        // printf(" Print after head : %s\n",(char*)head->data->data);
 
-        // memset(buff, 0, 1024);
-        memset(&data_size,0,4);
-        // free(id);
-        // free(buff); 
-
-
+        node_count+=1;
     }
-    printf(" Print after loop : %s\n",(char*)head->data->data);
+
     printf("Tree after construction: \n");
     printTree(head);
     close(fd);
     fd = open("bst_file", O_CREAT | O_WRONLY, S_IRWXU);
 
-    saveBst(fd, head, 3);
+    saveBst(fd, head, node_count);
 
     close(fd);
 
@@ -97,7 +98,7 @@ int main(){
         exit(1);
     }
     printf("Output after reading from the file: \n");
-    readBst(fd,3);
+    readBst(fd,node_count);
     close(fd);
 
     printf("Tree after reconstruction from file: \n");
@@ -108,13 +109,12 @@ int main(){
         exit(1);
     }
 
-    printTree(recBst(fd, 3));
+    printTree(recBst(fd, node_count));
 
-    close(fd);
-
-    // free(buff); 
     close(fd);
     close(new_socket);
     close(sock_fd);
+
+    printf("Connection terminated.\n");
     return 0;
 }
