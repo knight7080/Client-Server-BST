@@ -19,6 +19,8 @@ struct input{
     int size;
 };
 
+void processData(struct node* head, int node_count, struct sockaddr_in addr);
+
 int main(){
 
     int sock_fd, new_socket;
@@ -30,8 +32,8 @@ int main(){
 
     address.sin_family = AF_INET;
     address.sin_port = htons(PORT);
-    inet_pton(AF_INET, "172.26.199.112", &address.sin_addr);
-    // address.sin_addr.s_addr = INADDR_ANY;
+    // inet_pton(AF_INET, "172.26.199.112", &address.sin_addr);
+    address.sin_addr.s_addr = INADDR_ANY;
 
     if((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) <= 0){
         perror("Socket Connection Failed\n");
@@ -61,9 +63,12 @@ int main(){
         int status = recv(new_socket, num_pk, sizeof(num_pk), 0);
 
         if(status <= 0 ){
-            printf("Connection Closed. Waiting for a new one...\n");
+            processData(head, node_count, address);
+            printf("Connection Closed. Waiting for a new one...\n\n");
             new_socket = accept(sock_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
-            printf("Connected to %s\n", inet_ntoa(address.sin_addr));
+            printf("Connected to %s\n\n", inet_ntoa(address.sin_addr));
+            head = NULL;
+            node_count = 0;
             continue;
         }
 
@@ -83,16 +88,32 @@ int main(){
         node_count+=1;
     }
 
-    printf("Tree after construction: \n");
-    printTree(head);
     close(fd);
-    fd = open("bst_file", O_CREAT | O_WRONLY, S_IRWXU);
+    close(new_socket);
+    close(sock_fd);
+
+    printf("Connection terminated.\n");
+    return 0;
+}
+
+void processData(struct node* head, int node_count, struct sockaddr_in addr){
+    printf("Tree after construction: \n");
+    printf("Head rn: %s", (char*)head->data->data);
+    printTree(head);
+    
+    char file[256] = "bst/";
+    // strcat(file, inet_ntoa(addr.sin_addr));
+    snprintf(file, sizeof(file), "bst/%s", inet_ntoa(addr.sin_addr));
+
+    // printf("file name: %s\n", file);
+
+    int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
 
     saveBst(fd, head, node_count);
 
     close(fd);
 
-    fd = open("bst_file", O_RDONLY);
+    fd = open(file, O_RDONLY);
     if (fd < 0) {
         perror("file");
         exit(1);
@@ -103,7 +124,7 @@ int main(){
 
     printf("Tree after reconstruction from file: \n");
 
-    fd = open("bst_file", O_RDONLY);
+    fd = open(file, O_RDONLY);
     if (fd < 0) {
         perror("file");
         exit(1);
@@ -112,9 +133,5 @@ int main(){
     printTree(recBst(fd, node_count));
 
     close(fd);
-    close(new_socket);
-    close(sock_fd);
-
-    printf("Connection terminated.\n");
-    return 0;
+    head = NULL;
 }
