@@ -32,4 +32,6 @@ void printTree(struct node* head);
 
 struct node* recBst(int fd, int size);
 
+struct node* searchBst(struct node* head, int key);
+
 #endif

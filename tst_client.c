@@ -21,7 +21,7 @@ int main() {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(8080);
     inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
-    char buff[1024];
+    char buff[1024]; //
 
     if (connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("Connection to server failed");
@@ -62,7 +62,7 @@ int main() {
         int num_pk[] = {n_data->ds, n_data->key};
         send(sock_fd, num_pk, sizeof(num_pk),0);
         send(sock_fd, n_data->data, n_data->ds, 0);
-        memset(buff, 0, 1024);
+        memset(buff, 0, 1024); //
     } 
 
     close(sock_fd);

@@ -149,3 +149,7 @@ struct node* recBst(int fd, int size){
     }
     return head;
 }
+
+struct node* searchBst(struct node* head, int key){
+    
+}

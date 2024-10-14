@@ -3,10 +3,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <signal.h> 
 #include "up_bst.h"
 
 
@@ -19,11 +22,14 @@ struct input{
     int size;
 };
 
+int sock_fd, new_socket;
+
 void processData(struct node* head, int node_count, struct sockaddr_in addr);
+void handleClose(int signum);
 
 int main(){
 
-    int sock_fd, new_socket;
+    signal(SIGINT, handleClose);
     struct sockaddr_in address;
     int data_size, val_read;
     int num_pk[2];
@@ -105,8 +111,6 @@ void processData(struct node* head, int node_count, struct sockaddr_in addr){
     // strcat(file, inet_ntoa(addr.sin_addr));
     snprintf(file, sizeof(file), "bst/%s", inet_ntoa(addr.sin_addr));
 
-    // printf("file name: %s\n", file);
-
     int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
 
     saveBst(fd, head, node_count);
@@ -134,4 +138,10 @@ void processData(struct node* head, int node_count, struct sockaddr_in addr){
 
     close(fd);
     head = NULL;
+}
+
+void handleClose(int signum){
+    close(sock_fd);
+    close(new_socket);
+    exit(0);
 }
