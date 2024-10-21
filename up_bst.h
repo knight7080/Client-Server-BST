@@ -24,6 +24,10 @@ struct node* createNode(void* data, int key, int size);
 
 struct node* insert(struct node* head, struct node* n);
 
+struct node* delete(struct node* head, int key); //check
+
+struct node* findMin(struct node* head); //check
+
 void saveBst(int fd, struct node* head, int size);
 
 void readBst(int fd, int size);
@@ -32,6 +36,9 @@ void printTree(struct node* head);
 
 struct node* recBst(int fd, int size);
 
-struct node* searchBst(struct node* head, int key);
+char* generateTreeString(struct node* head);
+
+void concatTreeString(struct node* head, char* buffer);
+
 
 #endif

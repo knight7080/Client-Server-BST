@@ -150,6 +150,64 @@ struct node* recBst(int fd, int size){
     return head;
 }
 
-struct node* searchBst(struct node* head, int key){
-    
+struct node* delete(struct node* head, int key) {
+    if (head == NULL) {
+        return head;
+    }
+
+    if (key < head->key) {
+        head->l = delete(head->l, key);
+    } else if (key > head->key) {
+        head->r = delete(head->r, key);
+    } else {
+        if (head->l == NULL) {
+            struct node* temp = head->r;
+            free(head->data->data);
+            free(head->data);
+            free(head);
+            return temp;
+        } else if (head->r == NULL) {
+            struct node* temp = head->l;
+            free(head->data->data);
+            free(head->data);
+            free(head);
+            return temp;
+        }
+
+        struct node* temp = findMin(head->r);
+        head->key = temp->key;
+        head->data->data = temp->data->data;
+        head->data->ds = temp->data->ds;
+        head->r = delete(head->r, temp->key);
+    }
+    return head;
+}
+
+struct node* findMin(struct node* head) {
+    struct node* current = head;
+    while (current && current->l != NULL) {
+        current = current->l;
+    }
+    return current;
+}
+
+void concatTreeString(struct node* head, char* buffer) {
+    if (head == NULL) {
+        return;
+    }
+
+    concatTreeString(head->l, buffer);
+
+    char temp[256];
+    snprintf(temp, sizeof(temp), "Key : %d, Data : %s\n", head->key, (char*)head->data->data);
+    strcat(buffer, temp);
+
+    concatTreeString(head->r, buffer);
+}
+
+char* generateTreeString(struct node* head) {
+    char* result = malloc(1024 * sizeof(char));
+    result[0] = '\0';
+    concatTreeString(head, result);
+    return result;
 }

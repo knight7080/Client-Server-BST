@@ -53,16 +53,43 @@ int main() {
     // Manual Data Entry, using string for user demo input. Type independent aswell.
 
     while(1){
-        struct data* n_data = malloc(sizeof(struct data));
-        printf("Enter Key and Data: ");
-        scanf("%d %s", &n_data->key, buff);
-        n_data->data = buff;
-        n_data->ds = strlen(buff);
+        char msg[] = "Select a option \n 1. Insert Node\n 2. Delete Node\n 3. List Tree\n ";
+        int choice, key;
+        char res[1024], tree[1024];
+        printf("%s\nEnter a choice : ", msg);
+        scanf("%d",&choice);
+        send(sock_fd, &choice, sizeof(int),0);
+        
+        if(choice == 1){
+            struct data* n_data = malloc(sizeof(struct data));
+            printf("Enter Key and Data: ");
+            scanf("%d %s", &n_data->key, buff);
+            n_data->data = buff;
+            n_data->ds = strlen(buff);
 
-        int num_pk[] = {n_data->ds, n_data->key};
-        send(sock_fd, num_pk, sizeof(num_pk),0);
-        send(sock_fd, n_data->data, n_data->ds, 0);
-        memset(buff, 0, 1024); //
+            int num_pk[] = {n_data->ds, n_data->key};
+            send(sock_fd, num_pk, sizeof(num_pk),0);
+            send(sock_fd, n_data->data, n_data->ds, 0);
+            memset(buff, 0, 1024);
+        }
+        else if (choice == 2) {
+            printf("Enter the key: ");
+            scanf("%d", &key);
+            send(sock_fd, &key, sizeof(int), 0);
+            
+            recv(sock_fd, res, sizeof(res), 0);
+            printf("\n%s\n", res);
+            memset(res, 0, 1024);
+
+            recv(sock_fd, tree, sizeof(tree), 0);
+            memset(tree, 0, 1024);
+
+        }
+
+        else if(choice == 3){
+            recv(sock_fd, tree, sizeof(tree), 0);
+            printf("%s\n", tree);
+        }
     } 
 
     close(sock_fd);
